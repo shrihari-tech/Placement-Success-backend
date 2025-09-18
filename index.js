@@ -1,0 +1,19 @@
+const express = require('express');
+const port = 5000;
+const app = express();
+const pool = require('./db.js');
+const batches = require('./routes/Batches.js')
+const students = require('./routes/Students.js')
+const opportunities = require('./routes/Oppotunities.js')
+app.listen(port,()=>{
+    console.log(`Backend running on ${port}`);
+})
+app.use(express.json());
+
+app.get("/",(req,res)=>{
+    res.send("Hello World!");
+});
+
+app.use("/batches",batches);
+app.use("/students",students);
+app.use("/opportunities",opportunities);
