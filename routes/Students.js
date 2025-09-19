@@ -14,16 +14,22 @@ router.get("/allStudents",async(req,res)=>{
 })
 
 // post a student - bulk add
-router.post("/bulkAdd", async (req, res) => {
+router.post("/bulkAdd/:batchName", async (req, res) => {
+  const { batchName } = req.params;
   const { students } = req.body; // expects an array of students
+
+  if(!batchName){
+    return res.status(400).json({ error: "Batch name is required in params" });
+  }
 
   if (!Array.isArray(students) || students.length === 0) {
     return res.status(400).json({ error: "No student data provided" });
   }
 
+
   const values = students.map((s) => [
     s.batchId || null,
-    s.batchName || "",
+    s.batchName || batchName,
     s.name || "",
     s.email || "",
     s.bookingId || "",
@@ -135,6 +141,43 @@ router.get("/students", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+// get student by booking id
+router.get("/student/:bookingId",async(req,res)=>{
+    try{
+        const { bookingId } = req.params;
+        const [rows] = await pool.query("SELECT * FROM students WHERE bookingId = ?", [bookingId]);
+        if(rows.length === 0){
+            return res.status(404).json({error:"Student not found"});
+        }
+        res.json(rows[0]);
+    }
+    catch(err){
+        console.error(err);
+        res.status(500).json({error:"Internal Server Error"});
+    }
+});
+
+// get student by batchno
+router.get("/:batchName", async (req, res) => {
+  try {
+    const { batchName } = req.params; // Correctly match the param
+    const [rows] = await pool.query(
+      "SELECT * FROM students WHERE batchName = ?",
+      [batchName]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "No students found for this batch" });
+    }
+
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 
 
 

@@ -5,6 +5,7 @@ const pool = require('./db.js');
 const batches = require('./routes/Batches.js')
 const students = require('./routes/Students.js')
 const opportunities = require('./routes/Oppotunities.js')
+const scores = require('./routes/Scores.js')
 app.listen(port,()=>{
     console.log(`Backend running on ${port}`);
 })
@@ -17,3 +18,4 @@ app.get("/",(req,res)=>{
 app.use("/batches",batches);
 app.use("/students",students);
 app.use("/opportunities",opportunities);
+app.use("/scores",scores);

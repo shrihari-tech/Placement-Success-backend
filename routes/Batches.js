@@ -16,9 +16,9 @@ router.get("/allBatches",async(req,res)=>{
 // post a batch
 router.post("/addBatch",async(req,res)=>{
     try{
-        const { batchNo, status, mode, startDate, endDate, domain } = req.body;
-        const [result] = await pool.query("INSERT INTO batches (batchNo, status, mode, startDate, endDate, domain) VALUES (?, ?, ?, ?, ?, ?)",
-            [batchNo, status, mode, startDate, endDate, domain]
+        const { batchName, status, mode, startDate, endDate, domain } = req.body;
+        const [result] = await pool.query("INSERT INTO batches (batchName, status, mode, startDate, endDate, domain) VALUES (?, ?, ?, ?, ?, ?)",
+            [batchName, status, mode, startDate, endDate, domain]
         );
         res.json({message:"Batch added successfully", batchId: result.insertId});
     }
@@ -64,9 +64,9 @@ router.delete("/:id",async(req,res)=>{
 router.put("/:id",async(req,res)=>{
     try{
         const { id } = req.params;
-        const { batchNo, status, mode, startDate, endDate, domain } = req.body;
-        const [result] = await pool.query("UPDATE batches SET batchNo = ?, status = ?, mode = ?, startDate = ?, endDate = ?, domain = ? WHERE id = ?",
-            [batchNo, status, mode, startDate, endDate, domain, id]
+        const { batchName, status, mode, startDate, endDate, domain } = req.body;
+        const [result] = await pool.query("UPDATE batches SET batchName = ?, status = ?, mode = ?, startDate = ?, endDate = ?, domain = ? WHERE id = ?",
+            [batchName, status, mode, startDate, endDate, domain, id]
         );
         if(result.affectedRows === 0){
             return res.status(404).json({error:"Batch not found"});
@@ -78,5 +78,44 @@ router.put("/:id",async(req,res)=>{
         res.status(500).json({error:"Internal Server Error"});
     }
 });
+
+//batch change
+router.post("/:bookingId", async (req, res) => {
+  const { bookingId } = req.params;
+  const { toBatchNo, domain, reason, attachmentUrl, requestedBy } = req.body;
+
+  try {
+    // Find batchId from batchName
+    const [batch] = await pool.query(
+      "SELECT id FROM batches WHERE batchName = ?",
+      [toBatchNo]
+    );
+
+    if (batch.length === 0) {
+      return res.status(404).json({ error: "Batch not found" });
+    }
+
+    const batchId = batch[0].id;
+
+    // Update student's batchId
+    await pool.query(
+      "UPDATE students SET batchId = ? WHERE bookingId = ?",
+      [batchId, bookingId]
+    );
+
+    // Record the change in batchChange table
+    await pool.query(
+      `INSERT INTO batch_changes (bookingId, fromBatch, toBatch, domain, reason, attachmentUrl, requestedBy) 
+       VALUES (?, (SELECT batchName FROM batches b JOIN students s ON b.id = s.batchId WHERE s.bookingId = ?), ?, ?, ?, ?, ?)`,
+      [bookingId, bookingId, toBatchNo, domain, reason, attachmentUrl, requestedBy]
+    );
+
+    res.json({ message: "Batch changed successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 
 module.exports = router;
