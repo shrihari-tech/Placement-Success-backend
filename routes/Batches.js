@@ -61,23 +61,57 @@ router.delete("/:id",async(req,res)=>{
 });
 
 //update a batch by id
-router.put("/:id",async(req,res)=>{
-    try{
-        const { id } = req.params;
-        const { batchName, status, mode, startDate, endDate, domain } = req.body;
-        const [result] = await pool.query("UPDATE batches SET batchName = ?, status = ?, mode = ?, startDate = ?, endDate = ?, domain = ? WHERE id = ?",
-            [batchName, status, mode, startDate, endDate, domain, id]
-        );
-        if(result.affectedRows === 0){
-            return res.status(404).json({error:"Batch not found"});
-        }
-        res.json({message:"Batch updated successfully"});
+// router.put("/:id",async(req,res)=>{
+//     try{
+//         const { id } = req.params;
+//         const { batchName, status, mode, startDate, endDate, domain } = req.body;
+//         const [result] = await pool.query("UPDATE batches SET batchName = ?, status = ?, mode = ?, startDate = ?, endDate = ?, domain = ? WHERE id = ?",
+//             [batchName, status, mode, startDate, endDate, domain, id]
+//         );
+//         if(result.affectedRows === 0){
+//             return res.status(404).json({error:"Batch not found"});
+//         }
+//         res.json({message:"Batch updated successfully"});
+//     }
+//     catch(err){
+//         console.error(err);
+//         res.status(500).json({error:"Internal Server Error"});
+//     }
+// });
+router.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { 
+      batchName, 
+      status, 
+      mode, 
+      startDate, 
+      endDate, 
+      domain, 
+      trainer, 
+      startTime, 
+      endTime 
+    } = req.body;
+
+    const [result] = await pool.query(
+      `UPDATE batches 
+       SET batchName = ?, status = ?, mode = ?, startDate = ?, endDate = ?, 
+           domain = ?, trainer = ?, startTime = ?, endTime = ? 
+       WHERE id = ?`,
+      [batchName, status, mode, startDate, endDate, domain, trainer, startTime, endTime, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Batch not found" });
     }
-    catch(err){
-        console.error(err);
-        res.status(500).json({error:"Internal Server Error"});
-    }
+
+    res.json({ message: "Batch updated successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
+
 
 //batch change
 router.post("/:bookingId", async (req, res) => {
@@ -116,6 +150,7 @@ router.post("/:bookingId", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 
 module.exports = router;

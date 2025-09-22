@@ -6,6 +6,7 @@ const batches = require('./routes/Batches.js')
 const students = require('./routes/Students.js')
 const opportunities = require('./routes/Oppotunities.js')
 const scores = require('./routes/Scores.js')
+
 app.listen(port,()=>{
     console.log(`Backend running on ${port}`);
 })
@@ -14,6 +15,10 @@ app.use(express.json());
 app.get("/",(req,res)=>{
     res.send("Hello World!");
 });
+
+if(pool){
+    console.log("Database connected");
+}
 
 app.use("/batches",batches);
 app.use("/students",students);

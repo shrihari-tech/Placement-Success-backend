@@ -179,6 +179,48 @@ router.get("/:batchName", async (req, res) => {
 });
 
 
+// get students by batchname & epic
+router.get("/:batchName/:epicStatus", async (req, res) => {
+  try {
+    const { batchName, epicStatus } = req.params;
+
+    const [rows] = await pool.query(
+      "SELECT * FROM students WHERE batchName = ? AND epicStatus = ?",
+      [batchName, epicStatus]
+    );
+
+    if (rows.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "No students found for this batch and epic status" });
+    }
+
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// get all placed students
+router.get("/placed", async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      "SELECT * FROM students WHERE placement = 'Placed'"
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "No placed students found" });
+    }
+
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
 
 
 module.exports = router;
