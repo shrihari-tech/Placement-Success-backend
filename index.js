@@ -6,6 +6,7 @@ const batches = require('./routes/Batches.js')
 const students = require('./routes/Students.js')
 const opportunities = require('./routes/Oppotunities.js')
 const scores = require('./routes/Scores.js')
+const teamLeader = require('./routes/TeamLeader.js')
 
 app.listen(port,()=>{
     console.log(`Backend running on ${port}`);
@@ -24,3 +25,4 @@ app.use("/batches",batches);
 app.use("/students",students);
 app.use("/opportunities",opportunities);
 app.use("/scores",scores);
+app.use("/team-leaders",teamLeader);
