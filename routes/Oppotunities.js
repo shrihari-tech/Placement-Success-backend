@@ -156,6 +156,21 @@ router.put("/opportunity/:id",async(req,res)=>{
     }
 });
 
+//students by opportunity id
+router.get("/opportunity/:id/students",async(req,res)=>{
+    try{
+        const { id } = req.params;
+        const [rows] = await pool.query("SELECT * FROM students WHERE opportunityId = ?", [id]);
+        if(rows.length === 0){
+            return res.status(404).json({error:"No students found for this opportunity"});
+        }
+        res.json(rows);
+    }
+    catch(err){
+        console.error(err);
+        res.status(500).json({error:"Internal Server Error"});
+    }
+});
 
 
 module.exports = router;
