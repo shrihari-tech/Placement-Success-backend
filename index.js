@@ -1,3 +1,4 @@
+//backend/Placement-Success-backend/index.js
 const express = require('express');
 const port = 5000;
 const app = express();
@@ -8,7 +9,8 @@ const opportunities = require('./routes/Oppotunities.js')
 const scores = require('./routes/Scores.js')
 const teamLeader = require('./routes/TeamLeader.js')
 const owner = require('./routes/owner.js')
-
+const cors = require('cors');
+app.use(cors());
 app.listen(port,()=>{
     console.log(`Backend running on ${port}`);
 })
