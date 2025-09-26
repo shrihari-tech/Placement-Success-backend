@@ -221,6 +221,36 @@ router.get("/placed", async (req, res) => {
   }
 });
 
+
+// mark student as ineligible and not required for placement
+// Mark student as Not Required or Ineligible
+router.put("/placement/:bookingId", async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const { status } = req.body; // expects "Not Required" or "Ineligible"
+
+    if (!status || !["Not Required", "Ineligible"].includes(status)) {
+      return res.status(400).json({
+        error: "Invalid status. Use 'Not Required' or 'Ineligible'",
+      });
+    }
+
+    const [result] = await pool.query(
+      "UPDATE students SET placement = ? WHERE bookingId = ?",
+      [status, bookingId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Student not found" });
+    }
+
+    res.json({ message: `Student marked as ${status} successfully` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // ============ DASHBOARD STATS & GRAPHS (Placement Ops Head) ============
 // GET /students/stats
 router.get("/stats", async (req, res) => {
