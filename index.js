@@ -6,6 +6,7 @@ const batches = require('./routes/Batches.js')
 const students = require('./routes/Students.js')
 const opportunities = require('./routes/Oppotunities.js')
 const scores = require('./routes/Scores.js')
+const cors = require('cors');
 
 app.use(cors());
 app.listen(port,()=>{
