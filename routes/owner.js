@@ -347,10 +347,53 @@ router.get("/reports/batches-by-domain", async (req, res) => {
   }
 });
 
+// ➤ GET /owner/epic/search — Search Students by Domain/Batch for EPIC Report
+router.get("/epic/search", async (req, res) => {
+  try {
+    const { domain, batch } = req.query;
+
+    let query = `
+      SELECT 
+        s.name,
+        s.email,
+        s.phone,
+        s.batch_no as batch,
+        s.attendance,
+        s.epic_status as epicStatus,
+        s.booking_id
+      FROM students s
+      WHERE 1=1
+    `;
+    const values = [];
+
+    if (domain) {
+      const prefix = getBatchPrefix(domain);
+      if (!prefix) {
+        return res.status(400).json({ error: "Invalid domain" });
+      }
+      query += ` AND s.batch_no LIKE ?`;
+      values.push(`${prefix}%`);
+    }
+
+    if (batch) {
+      query += ` AND s.batch_no = ?`;
+      values.push(batch);
+    }
+
+    const [rows] = await pool.query(query, values);
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Owner EPIC Search Error:", err.message || err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // Helper: Map domain to batch prefix
 function getBatchPrefix(domain) {
   const map = {
     fullstack: "FS",
+    data:"DA",
     dataanalytics: "DA",
     marketing: "MK",
     sap: "SA",
@@ -361,3 +404,42 @@ function getBatchPrefix(domain) {
 }
 
 module.exports = router;
+
+
+// ➤ GET /owner/placement/yet-to-place
+router.get("/placement/yet-to-place", async (req, res) => {
+  try {
+    const { domain, batch } = req.query;
+    let query = `
+      SELECT 
+        s.name,
+        s.email,
+        s.phone,
+        s.batch_no as batch,
+        s.attendance,
+        s.epic_status as epicStatus,
+        s.booking_id
+      FROM students s
+      WHERE s.placement = 'Yet to Place'
+    `;
+    const values = [];
+
+    if (domain) {
+      const prefix = getBatchPrefix(domain);
+      if (!prefix) return res.status(400).json({ error: "Invalid domain" });
+      query += ` AND s.batch_no LIKE ?`;
+      values.push(`${prefix}%`);
+    }
+
+    if (batch) {
+      query += ` AND s.batch_no = ?`;
+      values.push(batch);
+    }
+
+    const [rows] = await pool.query(query, values);
+    res.json(rows);
+  } catch (err) {
+    console.error("Yet to Place Search Error:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
