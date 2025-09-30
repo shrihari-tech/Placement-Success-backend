@@ -9,6 +9,8 @@ const opportunities = require("./routes/Oppotunities.js");
 const scores = require("./routes/Scores.js");
 const teamLeader = require("./routes/TeamLeader.js");
 const owner = require("./routes/owner.js");
+const spoc = require("./routes/Spoc.js");
+const placementOpportunities = require("./routes/PlacementOpportunities.js");
 const cors = require("cors");
 app.use(cors());
 app.listen(port, () => {
@@ -30,3 +32,5 @@ app.use("/opportunities", opportunities);
 app.use("/scores", scores);
 app.use("/teamLeader", teamLeader);
 app.use("/owner", owner);
+app.use("/spoc", spoc);
+app.use("/placementOpportunities", placementOpportunities);

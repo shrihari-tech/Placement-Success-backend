@@ -1,7 +1,8 @@
+// routes/students.js
 const router = require("express").Router();
 const pool = require("../db");
 
-// get all students
+// GET /students/allStudents → get all students
 router.get("/allStudents", async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT * FROM students");
@@ -12,10 +13,10 @@ router.get("/allStudents", async (req, res) => {
   }
 });
 
-// post a student - bulk add
+// POST /students/bulkAdd/:batchName → bulk add students
 router.post("/bulkAdd/:batchName", async (req, res) => {
   const { batchName } = req.params;
-  const { students } = req.body; // expects an array of students
+  const { students } = req.body;
 
   if (!batchName) {
     return res.status(400).json({ error: "Batch name is required in params" });
@@ -92,25 +93,15 @@ router.post("/bulkAdd/:batchName", async (req, res) => {
       insertedCount: result.affectedRows,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Bulk insert error:", err);
+    res.status(500).json({ error: err.message || "Internal Server Error" });
   }
 });
 
-// get all students by batch id
-// router.get("/batch/:batchId", async (req, res) => {
-
-//   const { batchId } = req.params;
-//     try {
-//         const [rows] = await pool.query("SELECT * FROM students WHERE batchId = ?", [batchId]);
-//         res.json(rows);
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).json({ error: "Internal Server Error" });
-//     }
-// });
-
-router.get("/students", async (req, res) => {
-  const { batchId, placement } = req.query; // ✅ use query params instead of params
+// ✅ FIXED: Changed from "/students" to "/" 
+// Now accessible at: GET /students?batchId=...&placement=...
+router.get("/", async (req, res) => {
+  const { batchId, placement } = req.query;
 
   try {
     let query = "SELECT * FROM students WHERE 1=1";
@@ -127,20 +118,20 @@ router.get("/students", async (req, res) => {
     }
 
     if (!batchId && !placement) {
-      return res
-        .status(400)
-        .json({ error: "Please provide either batchId or placement" });
+      return res.status(400).json({
+        error: "Please provide either batchId or placement as query parameters",
+      });
     }
 
     const [rows] = await pool.query(query, values);
     res.json(rows);
   } catch (err) {
-    console.error(err);
+    console.error("Filter students error:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-// get student by booking id
+// GET /students/student/:bookingId
 router.get("/student/:bookingId", async (req, res) => {
   try {
     const { bookingId } = req.params;
@@ -158,19 +149,17 @@ router.get("/student/:bookingId", async (req, res) => {
   }
 });
 
-// get student by batchno
+// GET /students/:batchName
 router.get("/:batchName", async (req, res) => {
   try {
-    const { batchName } = req.params; // Correctly match the param
+    const { batchName } = req.params;
     const [rows] = await pool.query(
       "SELECT * FROM students WHERE batchName = ?",
       [batchName]
     );
 
     if (rows.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "No students found for this batch" });
+      return res.status(404).json({ error: "No students found for this batch" });
     }
 
     res.json(rows);
@@ -180,20 +169,17 @@ router.get("/:batchName", async (req, res) => {
   }
 });
 
-// get students by batchname & epic
+// GET /students/:batchName/:epicStatus
 router.get("/:batchName/:epicStatus", async (req, res) => {
   try {
     const { batchName, epicStatus } = req.params;
-
     const [rows] = await pool.query(
       "SELECT * FROM students WHERE batchName = ? AND epicStatus = ?",
       [batchName, epicStatus]
     );
 
     if (rows.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "No students found for this batch and epic status" });
+      return res.status(404).json({ error: "No students found for this batch and epic status" });
     }
 
     res.json(rows);
@@ -203,7 +189,7 @@ router.get("/:batchName/:epicStatus", async (req, res) => {
   }
 });
 
-// get all placed students
+// GET /students/placed → get all placed students
 router.get("/placed", async (req, res) => {
   try {
     const [rows] = await pool.query(
@@ -221,13 +207,11 @@ router.get("/placed", async (req, res) => {
   }
 });
 
-
-// mark student as ineligible and not required for placement
-// Mark student as Not Required or Ineligible
+// PUT /students/placement/:bookingId
 router.put("/placement/:bookingId", async (req, res) => {
   try {
     const { bookingId } = req.params;
-    const { status } = req.body; // expects "Not Required" or "Ineligible"
+    const { status } = req.body;
 
     if (!status || !["Not Required", "Ineligible"].includes(status)) {
       return res.status(400).json({
@@ -251,18 +235,15 @@ router.put("/placement/:bookingId", async (req, res) => {
   }
 });
 
-// ============ DASHBOARD STATS & GRAPHS (Placement Ops Head) ============
 // GET /students/stats
 router.get("/stats", async (req, res) => {
   try {
-    // 1. Total Batches per Domain
     const [totalBatches] = await pool.query(`
       SELECT domain, COUNT(*) as count
       FROM batches
       GROUP BY domain
     `);
 
-    // 2. Upcoming Batches per Domain (startDate > today)
     const [upcomingBatches] = await pool.query(`
       SELECT domain, COUNT(*) as count
       FROM batches
@@ -270,7 +251,6 @@ router.get("/stats", async (req, res) => {
       GROUP BY domain
     `);
 
-    // 3. Placed Students per Domain
     const [placedStudents] = await pool.query(`
       SELECT b.domain, COUNT(*) as count
       FROM students s
@@ -279,7 +259,6 @@ router.get("/stats", async (req, res) => {
       GROUP BY b.domain
     `);
 
-    // 4. Yet-to-be-Placed Students per Domain
     const [yetToPlaceStudents] = await pool.query(`
       SELECT b.domain, COUNT(*) as count
       FROM students s
@@ -288,7 +267,6 @@ router.get("/stats", async (req, res) => {
       GROUP BY b.domain
     `);
 
-    // Map domains to consistent keys
     const mapDomainToKey = (domain) => {
       const map = {
         "Full Stack": "fullstack",
@@ -317,7 +295,7 @@ router.get("/stats", async (req, res) => {
       yetToPlaceStudentsPerDomain: formatData(yetToPlaceStudents),
     });
   } catch (err) {
-    console.error("Dashboard Stats Error:", err.message, err.sql);
+    console.error("Dashboard Stats Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -325,7 +303,6 @@ router.get("/stats", async (req, res) => {
 // GET /students/graphs
 router.get("/graphs", async (req, res) => {
   try {
-    // Placements grouped by month
     const [currentYearData] = await pool.query(`
       SELECT 
         MONTH(placedMonth) as month,
@@ -353,8 +330,8 @@ router.get("/graphs", async (req, res) => {
     `);
 
     const monthNames = [
-      "Jan","Feb","Mar","Apr","May","Jun",
-      "Jul","Aug","Sep","Oct","Nov","Dec"
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     ];
 
     const formatGraphData = (rows) =>
@@ -378,9 +355,126 @@ router.get("/graphs", async (req, res) => {
       currentData: fillMissingMonths(formatGraphData(currentYearData)),
     });
   } catch (err) {
-    console.error("Dashboard Graphs Error:", err.message, err.sql);
+    console.error("Dashboard Graphs Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
+
+
+router.get("/dashboard/stats", async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT 
+        b.domain,
+        COUNT(DISTINCT b.id) AS totalBatches,
+        SUM(CASE WHEN b.startDate > CURDATE() THEN 1 ELSE 0 END) AS upcomingBatches,
+        SUM(CASE WHEN s.placement = 'Placed' THEN 1 ELSE 0 END) AS placedStudents,
+        SUM(CASE WHEN s.placement IN ('Yet to Place','Not Placed') THEN 1 ELSE 0 END) AS yetToPlaceStudents
+      FROM batches b
+      LEFT JOIN students s ON b.id = s.batchId
+      GROUP BY b.domain
+    `);
+
+    const mapDomainToKey = (domain) => {
+      const map = {
+        "Full Stack": "fullstack",
+        "Data Analytics": "data",
+        "Data Analytics & Science": "data",
+        "Digital Marketing": "marketing",
+        "Marketing": "marketing",
+        SAP: "sap",
+        Banking: "banking",
+        "Banking & Financial Services": "banking",
+        DevOps: "devops",
+      };
+      return map[domain] || domain.toLowerCase().replace(/\s+/g, "");
+    };
+
+    const totalBatchesPerDomain = {};
+    const upcomingBatchesPerDomain = {};
+    const placedStudentsPerDomain = {};
+    const yetToPlaceStudentsPerDomain = {};
+
+    rows.forEach((row) => {
+      const key = mapDomainToKey(row.domain);
+      totalBatchesPerDomain[key] = row.totalBatches;
+      upcomingBatchesPerDomain[key] = row.upcomingBatches;
+      placedStudentsPerDomain[key] = row.placedStudents;
+      yetToPlaceStudentsPerDomain[key] = row.yetToPlaceStudents;
+    });
+
+    res.json({
+      totalBatchesPerDomain,
+      upcomingBatchesPerDomain,
+      placedStudentsPerDomain,
+      yetToPlaceStudentsPerDomain,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch dashboard stats" });
+  }
+});
+
+router.get("/graph-data", async (req, res) => {
+  try {
+    // Current year
+// Current Year
+const [currentYearData] = await pool.query(`
+  SELECT 
+    MONTH(placed_month) AS month,
+    COUNT(*) AS studentCount
+  FROM students
+  WHERE placement = 'Placed'
+    AND placed_month IS NOT NULL
+    AND YEAR(placed_month) = YEAR(CURDATE())
+  GROUP BY MONTH(placed_month)
+  ORDER BY MONTH(placed_month)
+`);
+
+// Previous Year
+const [previousYearData] = await pool.query(`
+  SELECT 
+    MONTH(placed_month) AS month,
+    COUNT(*) AS studentCount
+  FROM students
+  WHERE placement = 'Placed'
+    AND placed_month IS NOT NULL
+    AND YEAR(placed_month) = YEAR(CURDATE()) - 1
+  GROUP BY MONTH(placed_month)
+  ORDER BY MONTH(placed_month)
+`);
+
+    const monthNames = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+
+    const formatGraphData = (rows) =>
+      rows.map(row => ({
+        name: monthNames[row.month - 1],
+        value: row.studentCount
+      }));
+
+    const fillMissingMonths = (data) => {
+      const filled = [];
+      for (let i = 0; i < 12; i++) {
+        const found = data.find(d => d.name === monthNames[i]);
+        filled.push(found || { name: monthNames[i], value: 0 });
+      }
+      return filled;
+    };
+
+    res.json({
+      previousData: fillMissingMonths(formatGraphData(previousYearData)),
+      currentData: fillMissingMonths(formatGraphData(currentYearData))
+    });
+
+  } catch (err) {
+    console.error("Graph Data Error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 
 module.exports = router;

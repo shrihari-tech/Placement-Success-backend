@@ -153,4 +153,86 @@ router.post("/:bookingId", async (req, res) => {
 
 
 
+// GET /batches/totalBatches → get total batches count per domain
+// GET /batches/totalBatches → get total batches count per domain
+router.get("/totalBatches", async (req, res) => {
+  try {
+    console.log("Fetching total batches...");
+    
+    const [rows] = await pool.query(`
+      SELECT domain, COUNT(*) as count
+      FROM batches
+      GROUP BY domain
+    `);
+
+    console.log("Raw database results:", rows);
+
+    // If no batches found
+    if (rows.length === 0) {
+      console.log("No batches found in database");
+      return res.json({ 
+        totalBatchesPerDomain: {
+          fullstack: 0,
+          data: 0,
+          marketing: 0,
+          sap: 0,
+          banking: 0,
+          devops: 0
+        } 
+      });
+    }
+
+    const mapDomainToKey = (domain) => {
+      const map = {
+        "Full Stack": "fullstack",
+        "Full Stack Development": "fullstack",
+        "Data Analytics": "data",
+        "Data Analytics & Science": "data",
+        "Digital Marketing": "marketing",
+        "Marketing": "marketing",
+        "SAP": "sap",
+        "Banking": "banking",
+        "Banking & Financial Services": "banking",
+        "DevOps": "devops",
+      };
+      const mapped = map[domain] || domain.toLowerCase().replace(/\s+/g, "");
+      console.log(`Mapping: "${domain}" -> "${mapped}"`);
+      return mapped;
+    };
+
+    const totalBatchesPerDomain = rows.reduce((acc, row) => {
+      const key = mapDomainToKey(row.domain);
+      acc[key] = row.count;
+      return acc;
+    }, {});
+
+    console.log("Final mapped result:", totalBatchesPerDomain);
+
+    // Ensure all domains are present (even if 0)
+    const finalResult = {
+      fullstack: totalBatchesPerDomain.fullstack || 0,
+      data: totalBatchesPerDomain.data || 0,
+      marketing: totalBatchesPerDomain.marketing || 0,
+      sap: totalBatchesPerDomain.sap || 0,
+      banking: totalBatchesPerDomain.banking || 0,
+      devops: totalBatchesPerDomain.devops || 0,
+    };
+
+    res.json({ totalBatchesPerDomain: finalResult });
+
+  } catch (err) {
+    console.error("Total Batches Error:", err.message);
+    console.error(err.stack);
+    res.status(500).json({ error: "Failed to fetch total batches" });
+  }
+});
+
+
+// Add this to your batches.js route file
+router.get("/test", (req, res) => {
+  res.json({ message: "Batches API is working!", timestamp: new Date().toISOString() });
+});
+
+
+
 module.exports = router;
