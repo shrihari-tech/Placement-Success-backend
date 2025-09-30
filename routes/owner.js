@@ -393,6 +393,7 @@ router.get("/epic/search", async (req, res) => {
 function getBatchPrefix(domain) {
   const map = {
     fullstack: "FS",
+    data:"DA",
     dataanalytics: "DA",
     marketing: "MK",
     sap: "SA",
