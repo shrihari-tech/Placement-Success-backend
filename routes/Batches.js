@@ -14,34 +14,97 @@ router.get("/allBatches",async(req,res)=>{
 })
 
 // post a batch
-router.post("/addBatch",async(req,res)=>{
-    try{
-        const { batchName, status, mode, startDate, endDate, domain } = req.body;
-        const [result] = await pool.query("INSERT INTO batches (batchName, status, mode, startDate, endDate, domain) VALUES (?, ?, ?, ?, ?, ?)",
-            [batchName, status, mode, startDate, endDate, domain]
+// router.post("/addBatch",async(req,res)=>{
+//     try{
+//         const { batchName, status, mode, startDate, endDate, domain } = req.body;
+//         const [result] = await pool.query("INSERT INTO batches (batchName,  status, mode, start_date, end_date, domain) VALUES (?, ?, ?, ?, ?, ?)",
+//             [batchName, status, mode, startDate, endDate, domain]
+//         );
+//         res.json({message:"Batch added successfully", batchId: result.insertId});
+//     }
+//     catch(err){
+//         console.error(err);
+//         res.status(500).json({error:"Internal Server Error"});
+//     }
+// });
+
+// ...existing code...
+// ...existing code...
+router.post("/addBatch", async (req, res) => {
+    try {
+        const {
+            batch_no,
+            batchName,
+            status,
+            mode,
+            start_date,
+            end_date,
+            domain,
+            sections,
+            trainer_name,
+            total_count
+        } = req.body;
+        const [result] = await pool.query(
+            `INSERT INTO batches 
+            (batch_no, batchName, status, mode, start_date, end_date, domain, sections, trainer_name, total_count) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [batch_no, batchName, status, mode, start_date, end_date, domain, sections, trainer_name, total_count]
         );
-        res.json({message:"Batch added successfully", batchId: result.insertId});
-    }
-    catch(err){
+        res.json({ message: "Batch added successfully", batchId: result.insertId });
+    } catch (err) {
         console.error(err);
-        res.status(500).json({error:"Internal Server Error"});
+        res.status(500).json({ error: "Internal Server Error" });
     }
 });
+// ...existing code...
 
 //get batch by id
-router.get("/:id",async(req,res)=>{
-    try{
-        const { id } = req.params;
-        const [rows] = await pool.query("SELECT * FROM batches WHERE id = ?", [id]);
-        if(rows.length === 0){
-            return res.status(404).json({error:"Batch not found"});
-        }
-        res.json(rows[0]);
+// router.get("/:id",async(req,res)=>{
+//     try{
+//         const { id } = req.params;
+//         const [rows] = await pool.query("SELECT * FROM batches WHERE batch_no = ?", [id]);
+//         if(rows.length === 0){
+//             return res.status(404).json({error:"Batch not found"});
+//         }
+//         res.json(rows[0]);
+//     }
+//     catch(err){
+//         console.error(err);
+//         res.status(500).json({error:"Internal Server Error"});
+//     }
+// });
+
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Get the batch info (epic, batch_no, etc.)
+    const [batchRows] = await pool.query(
+      "SELECT * FROM batches WHERE id = ?",
+      [id]
+    );
+
+    if (batchRows.length === 0) {
+      return res.status(404).json({ error: "Batch not found" });
     }
-    catch(err){
-        console.error(err);
-        res.status(500).json({error:"Internal Server Error"});
-    }
+
+    const batch = batchRows[0];
+
+    // 2. Get the related students for this batch_no
+    const [studentRows] = await pool.query(
+      "SELECT * FROM students WHERE batch_no = ?",
+      [batch.batch_no]
+    );
+
+    // 3. Combine both
+    res.json({
+      batch,
+      students: studentRows,
+    });
+  } catch (err) {
+    console.error("Batch Fetch Error:", err.message || err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 // delete a by id
@@ -234,5 +297,82 @@ router.get("/test", (req, res) => {
 });
 
 
+//get batch by batch_no
+router.get("/batchNo/:batchName",async(req,res)=>{
+    try{
+        const { batchName } = req.params;
+        const [rows] = await pool.query("SELECT * FROM batches WHERE batchName = ?", [batchName]);
+        if(rows.length === 0){
+            return res.status(404).json({error:"Batch not found"});
+        }
+        res.json(rows[0]);
+    }
+    catch(err){
+        console.error(err);
+        res.status(500).json({error:"Internal Server Error"});
+    }
+});
+
+//get batch by batchName or start_date or end_date or mode
+// router.get("/search",async(req,res)=>{
+//     try{
+//         const { batchName, start_date, end_date, mode } = req.query;
+//         let query = "SELECT * FROM batches WHERE 1=1";
+//         let params = [];
+//         if(batchName){
+//             query += " AND batchName LIKE ?";
+//             params.push(`%${batchName}%`);
+//         }
+//         if(start_date){
+//             query += " AND start_date = ?";
+//             params.push(start_date);
+//         }
+//         if(end_date){
+//             query += " AND end_date = ?";
+//             params.push(end_date);
+//         } 
+//         if(mode){
+//             query += " AND mode = ?";
+//             params.push(mode);
+//         }
+//         const [rows] = await pool.query(query, params);
+//         res.json(rows);
+//     }
+//     catch(err){
+//         console.error(err);
+//         res.status(500).json({error:"Internal Server Error"});
+//     }
+// });
+
+router.get("/search",async(req,res)=>{
+    try{
+        const { batchName, start_date, end_date, mode } = req.query;
+        let query = "SELECT * FROM batches WHERE 1=1";
+        let params = [];
+        if(batchName){
+            query += " AND batchName LIKE ?";
+            params.push(`%${batchName}%`);
+        }
+        if(start_date){
+            query += " AND start_date = ?";
+            params.push(start_date);
+        }
+        if(end_date){
+            query += " AND end_date = ?";
+            params.push(end_date);
+        } 
+        if(mode){
+            query += " AND mode = ?";
+            params.push(mode);
+        }
+        console.log("Query:", query, params); // <-- Add this line
+        const [rows] = await pool.query(query, params);
+        res.json(rows);
+    }
+    catch(err){
+        console.error(err);
+        res.status(500).json({error:"Internal Server Error"});
+    }
+});
 
 module.exports = router;
