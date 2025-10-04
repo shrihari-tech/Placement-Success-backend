@@ -15,6 +15,7 @@ const epic = require('./routes/EPIC.js')
 const eligibilityStatus = require('./routes/EligibilityStatus.js')
 const batch_status = require('./routes/Batch_Status.js')
 const users = require('./routes/Users.js')
+const sme = require('./routes/Sme.js')
 const cors = require("cors");
 app.use(cors());
 
@@ -43,3 +44,4 @@ app.use("/teamLeader", teamLeader);
 app.use("/owner", owner);
 app.use("/batch_status", batch_status);
 app.use("/users", users);
+app.use("/sme", sme);
