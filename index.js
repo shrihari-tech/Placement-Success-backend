@@ -15,14 +15,18 @@ const epic = require('./routes/EPIC.js')
 const eligibilityStatus = require('./routes/EligibilityStatus.js')
 const batch_status = require('./routes/Batch_Status.js')
 const users = require('./routes/Users.js')
+<<<<<<< HEAD
 const sme = require('./routes/Sme.js')
+=======
+const spocs = require('./routes/Spoc.js')
+>>>>>>> 10d9aeee4227016ced13971497c35bbf9360bb67
 const cors = require("cors");
 app.use(cors());
 
 app.listen(port, () => {
   console.log(`Backend running on ${port}`);
 });
-app.use(express.json());
+app.use(express.json({limit:"50mb"}));
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
@@ -36,6 +40,7 @@ app.use("/batches", batches);
 app.use("/domain",domains);
 app.use("/eligibilityStatus",eligibilityStatus);
 app.use("/epic",epic);
+app.use("/spocs",spocs);
 app.use("/user",user);
 app.use("/students", students);
 app.use("/opportunities", opportunities);
